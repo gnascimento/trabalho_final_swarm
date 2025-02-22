@@ -357,7 +357,7 @@ resource "aws_instance" "load_balancer" {
         balance roundrobin
         server worker1 ${aws_instance.worker[0].private_ip}:8080 check
         server worker2 ${aws_instance.worker[1].private_ip}:8080 check
-        server worker2 ${aws_instance.manager.private_ip}:8080 check
+        server worker3 ${aws_instance.manager.private_ip}:8080 check
     EOT
 
     # Inicia HAProxy
