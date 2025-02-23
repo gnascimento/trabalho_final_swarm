@@ -324,6 +324,11 @@ resource "aws_instance" "load_balancer" {
     sudo chown -R haproxy:haproxy /run/haproxy
     sudo chmod -R 755 /run/haproxy
 
+    # Cria o arquivo /etc/tmpfiles.d/haproxy.conf para garantir que o diretorio /run/haproxy seja criado na inicialização
+    cat <<EOT > /etc/tmpfiles.d/haproxy.conf
+    d /run/haproxy 0755 haproxy haproxy -
+    EOT
+
     # Configura o rsyslog para aceitar logs do HAProxy
     echo 'local0.* /var/log/haproxy.log' >> /etc/rsyslog.conf
     systemctl restart rsyslog
