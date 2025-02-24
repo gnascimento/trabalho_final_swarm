@@ -24,7 +24,7 @@ resource "aws_subnet" "public_subnet" {
     Name = "public-subnet"
   }
 }
-
+/* 
 resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.main_vpc.id
   cidr_block        = "10.0.2.0/24"
@@ -33,7 +33,7 @@ resource "aws_subnet" "private_subnet" {
   tags = {
     Name = "private-subnet"
   }
-}
+} */
 
 resource "aws_internet_gateway" "main_igw" {
   vpc_id = aws_vpc.main_vpc.id
@@ -61,20 +61,20 @@ resource "aws_route_table_association" "public_route_table_association" {
   route_table_id = aws_route_table.public_route_table.id
 }
 
-resource "aws_nat_gateway" "main_nat_gw" {
+/* resource "aws_nat_gateway" "main_nat_gw" {
   allocation_id = aws_eip.main_eip.id
   subnet_id     = aws_subnet.public_subnet.id
 
   tags = {
     Name = "main-nat-gw"
   }
-}
+} */
 
 resource "aws_eip" "main_eip" {
   vpc = true
 }
 
-resource "aws_route_table" "private_route_table" {
+/* resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.main_vpc.id
 
   route {
@@ -85,12 +85,12 @@ resource "aws_route_table" "private_route_table" {
   tags = {
     Name = "private-route-table"
   }
-}
+} */
 
-resource "aws_route_table_association" "private_route_table_association" {
+/* resource "aws_route_table_association" "private_route_table_association" {
   subnet_id      = aws_subnet.private_subnet.id
   route_table_id = aws_route_table.private_route_table.id
-}
+} */
 
 ########################################
 # Security Group
@@ -116,28 +116,28 @@ resource "aws_security_group" "docker_sg" {
     from_port   = 2377
     to_port     = 2377
     protocol    = "tcp"
-    cidr_blocks = [aws_subnet.private_subnet.cidr_block]
+    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
   }
   ingress {
     description = "Docker Swarm overlay network TCP"
     from_port   = 7946
     to_port     = 7946
     protocol    = "tcp"
-    cidr_blocks = [aws_subnet.private_subnet.cidr_block]
+    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
   }
   ingress {
     description = "Docker Swarm overlay network UDP"
     from_port   = 7946
     to_port     = 7946
     protocol    = "udp"
-    cidr_blocks = [aws_subnet.private_subnet.cidr_block]
+    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
   }
   ingress {
     description = "Docker Swarm overlay network 2 (UDP)"
     from_port   = 4789
     to_port     = 4789
     protocol    = "udp"
-    cidr_blocks = [aws_subnet.private_subnet.cidr_block]
+    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
   }
 
   # Porta 8080
@@ -211,8 +211,9 @@ resource "aws_instance" "manager" {
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.docker_sg.id]
   key_name               = var.aws_key_pair_name
-  subnet_id              = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.public_subnet.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_instance_profile.name
+  associate_public_ip_address = true
 
   tags = {
     Name = "docker-manager"
@@ -254,8 +255,9 @@ resource "aws_instance" "worker" {
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.docker_sg.id]
   key_name               = var.aws_key_pair_name
-  subnet_id              = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.public_subnet.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_instance_profile.name
+  associate_public_ip_address = true
 
   tags = {
     Name = "docker-worker-${count.index}"
